@@ -192,29 +192,29 @@ def interpretCommand(port, l, phoneNumbers, lock, password, alarm_args):
             if phoneNumber not in phoneNumbers and "Logare=" in command: #authentification
                 if command.split("=")[1] == password:
                     phoneNumbers.append(phoneNumber)
-                    task = threading.Thread(target=sendSMS, args=(port, phoneNumber, "Sunteti logat.", lock,))
+                    task = threading.Thread(target=sendSMS, args=(port, phoneNumber, "You are logged in.", lock,))
                     task.start()
             elif phoneNumber in phoneNumbers:
-                if "Logare=" in command: #log in command when user is already logged in
-                    task = threading.Thread(target=sendSMS, args=(port, phoneNumber, "Sunteti deja logat.", lock,))
-                elif "Pornire GPS" == command: #turning on GPS
+                if "Log in=" in command: #log in command when user is already logged in
+                    task = threading.Thread(target=sendSMS, args=(port, phoneNumber, "You are already logged in", lock,))
+                elif "Power on GPS" == command: #turning on GPS
                     task = threading.Thread(target=sendStartingGPS, args=(port, phoneNumber, lock,))
-                elif "Oprire GPS" == command:  #turning of GPS
+                elif "Power off GPS" == command:  #turning of GPS
                     task = threading.Thread(target=sendStoppingGPS, args=(port, phoneNumber, lock,))
-                elif "Pozitie" == command:  #get current position
+                elif "Position" == command:  #get current position
                     task = threading.Thread(target=sendMapLink, args=(port, phoneNumber,alarm_args, lock,))
                 elif "Status GPS" == command: #GPS status
                     task = threading.Thread(target=sendStatusGPS, args=(port, phoneNumber, lock,))
-                elif "Pornire Alarma" == command: #turn on alarm
+                elif "Power on Alarm" == command: #turn on alarm
                     alarm_args[0] = True
                     task = threading.Thread(target=startAlarm, args=(port, alarm_args, phoneNumber, lock,))
-                elif "Oprire Alarma" == command: #turn off alarm
+                elif "Power off Alarm" == command: #turn off alarm
                     alarm_args[0] = False
-                    task = threading.Thread(target=sendSMS, args=(port, phoneNumber, "comanda primita", lock, ))
+                    task = threading.Thread(target=sendSMS, args=(port, phoneNumber, "Power off alarm received", lock, ))
                 elif "Status" == command:  #get status
                     task = threading.Thread(target=status, args=(port, phoneNumber, alarm_args, lock,))
                 else: #command not recognised
-                    task = threading.Thread(target=sendSMS, args=(port, phoneNumber, "Comanda nu exista", lock, ))
+                    task = threading.Thread(target=sendSMS, args=(port, phoneNumber, "command does not exist", lock, ))
                 task.start()
             atCommand(port, "AT+CMGD=1,4", lock) #removes all received messages
 
@@ -240,8 +240,6 @@ def startingModem(port, lock):
     atCommand(port, "AT+CMGF=1", lock)
     # Disable the Echo
     atCommand(port, 'ATE0', lock)
-    sendSMS(port, "+40773791847", "Modem started successfully", lock)
-    print("sent")
 
 
 if __name__ == "__main__":
@@ -255,10 +253,11 @@ if __name__ == "__main__":
     GPIO.cleanup()
 
     # Enable Serial Communication with raspberry
-    port = serial.Serial(port="/dev/ttyAMA0", baudrate=57600, timeout=2)
+    port = serial.Serial(port="/dev/ttyAMA0", baudrate=57600, timeout=2) #UART port for raspberry pi zero, 
+									 #on other raspberry models the UART port may not be the sabe
     lock = threading.Lock() #threading lock
     taskList = list() #command list
-    phoneNumbers = ["+40773791847"] #phone numbers of the authenticated users
+    phoneNumbers = [] #phone numbers of the authenticated users
     time.sleep(15)
     startingModem(port, lock)
     password = "123" #pasword
